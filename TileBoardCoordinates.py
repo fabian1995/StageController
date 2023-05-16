@@ -1,18 +1,58 @@
+""" TileBoardCoordinates.py
+
+Contains two classes:
+ * TileBoardCoordinates, a utility class to define a coordinate system and
+   convert between cartesian and polar coordinates.
+ * TileBoard, a class that contains the geometry definition of a tileboard,
+   utility functions and drawing.
+"""
+
 import numpy as np
 import math
 import matplotlib.patches as patches
 
 class TileBoardCoordinates:
+    """
+    Utility class to define a coordinate system for the tileboard. Contains
+    functions to convert between polar and cartesian coordinates, as well
+    as rotations and transformations.
+
+    Args:
+        base_origin (np.array): x and y offset of the origin
+        base_rotation (float): Initial rotation of the coordinate system in
+            degrees (between 0 and 360).
+    """
     def __init__(self, base_origin=np.array([0, 0]), base_rotation=90):
         self.base_origin = base_origin
         self.base_rotation = base_rotation
 
     def PolarToCartesian(self, r, phi):
+        """
+        Transforms a set of polar coordinates to cartesian coordinates.
+        Takes initial rotation and coordinate offset into account.
+
+        Args:
+            r (float or np.array): Radius or list of radii
+            phi (floar or np.array): Angle or list of angles
+
+        Returns:
+            x, y: List of cartesian coordinates
+        """
         x = r * np.cos((phi + self.base_rotation) * np.pi/180) + self.base_origin[0]
         y = r * np.sin((phi + self.base_rotation) * np.pi/180) + self.base_origin[1]
         return x, y
 
     def CartesianToPolar(self, x, y):
+        """
+        Transforms a set of cartesian coordinates to polar coordinates.
+        Takes initial rotation and coordinate offset into account.
+
+        Args:
+            x, y (float or np.array): Lists of coordinates.
+
+        Returns:
+            r, phi: Lists of polar coordinates
+        """
         x = x - self.base_origin[0]
         y = y - self.base_origin[1]
         r = np.sqrt(x**2 + y**2)
@@ -26,18 +66,49 @@ class TileBoardCoordinates:
         return r, phi
 
     def Transform(self, x, y, r, phi):
+        """
+        Shifts a set of points by a distance r in direction phi.
+        Takes initial rotation and coordinate offset into account.
+
+        Args:
+            x, y (float or np.array): Cartesian coordinates of the points to
+                be moved.
+            r (float): Distance that each point will move.
+            phi (float): Angle for the move operation.
+
+        Returns:
+            x, y (float or np.array): New cartesian positions of the points.
+        """
         x = x + self.PolarToCartesian(r, phi)[0]
         y = y + self.PolarToCartesian(r, phi)[1]
         return x, y
 
     def Rotate(self, x, y, phi):
-        # phi += self.base_rotation
+        """
+        Rotates a set of points around (0, 0) by an angle phi.
+
+        Args:
+            x, y (float or np.array): Cartesian coordinates of the points to
+                be rotated around (0, 0).
+            phi (float): Angle for the rotation.
+
+        Returns:
+            x, y (float or np.array): New cartesian positions of the points.
+        """
         x1 = x * np.cos(math.radians(phi)) - y * np.sin(math.radians(phi))
         y1 = x * np.sin(math.radians(phi)) + y * np.cos(math.radians(phi))
         return x1, y1
 
 
 class TileBoard:
+    """
+    This class specifies the geometry of a tileboard and contains some utility
+    functions for drawing and geometric calculations.
+    Currently, the D8 geometry is hard-coded in the constructor.
+
+    Args:
+        coordinates: The coordinate system, an instance of TileBoardCoordinates.
+    """
     def __init__(self, coordinates):
         self.coordinates = coordinates
 
@@ -56,6 +127,18 @@ class TileBoard:
 
 
     def GetChannelByPosition(self, x, y):
+        """
+        Calculates if a given point (x, y) lies on a tile of the tileboard and
+        returns the channel number.
+
+        Args:
+            x, y (float): Cartesian coordinates.
+
+        Returns:
+            A channel number if (x, y) is within a tile, or
+            -1 if (x, y) is on the tileboard but between two tiles, or
+            -2 if (x, y) is outside the tileboard,
+        """
         r, phi = self.coordinates.CartesianToPolar(x, y)
         if phi < self.Board_angles[0] or phi > self.Board_angles[1] or r < self.Board_radii[0] or r > self.Board_radii[1]:
             return -2
@@ -90,6 +173,13 @@ class TileBoard:
 
 
     def DrawOutline(self, ax, detail=30):
+        """
+        Draws the outline of the tileboard.
+
+        Args:
+            ax: The pyplot axis to draw to.
+            detail (int): Number of points used to draw the arcs.
+        """
         r1 = self.Board_radii[0]
         r2 = self.Board_radii[1]
         theta1 = self.Board_angles[0]
@@ -101,6 +191,19 @@ class TileBoard:
         ax.plot(*self.coordinates.PolarToCartesian(np.full(detail, r2), np.linspace(*self.Board_angles, detail)), color="k")
 
     def DrawSiPMs(self, ax, label_pos=False, radii=None, angles=None, format_str="bo"):
+        """
+        Draws SiPM positions.
+
+        Args:
+            ax: The pyplot axis to draw to.
+            label_pos (bool): If True, channel labels also show the cartesian
+                positions. Default is False.
+            radii (np.array): If None specified (which is the default), then
+                the SiPM positions of the tileboard are used.
+            angles (np.array): If None specified (which is the default), then
+                the SiPM positions of the tileboard are used.
+            format_str (string): Default is "bo".
+        """
         x = []
         y = []
         i = 0
@@ -118,6 +221,11 @@ class TileBoard:
         ax.plot(x, y, format_str)
 
     def DrawTiles(self, ax):
+        """
+        Draw the outlines of the scintillator tiles on the tileboard.
+        Args:
+            ax: The pyplot axis to draw to.
+        """
         for r, h, a, b in zip(self.SiPM_radii, self.Tile_h, self.Tile_a, self.Tile_b):
             x = np.array([-a/2, a/2, b/2, -b/2])
             y = np.array([-h/2, -h/2, h/2, h/2])
