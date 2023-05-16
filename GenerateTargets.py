@@ -32,6 +32,7 @@ x_hits = -x_hits
 
 # Write the hit positions to a CSV file
 df = pd.DataFrame(data={"ch": board.SiPM_channels, "x": x_hits, "y": y_hits})
+df = df[~df["ch"].isin(board.SiPM_empty_channels)]
 df.to_csv("hit_positions.csv")
 
 # Draw the positions for debugging
@@ -42,6 +43,7 @@ board.DrawOutline(ax)
 board.DrawSiPMs(ax, label_pos=False)
 board.DrawTiles(ax)
 
-board.DrawSiPMs(ax, radii=radii, angles=angles, format_str="rx")
+# board.DrawSiPMs(ax, radii=radii, angles=angles, format_str="rx")
+ax.step(-df.x, df.y, "rx:")
 
 plt.show()

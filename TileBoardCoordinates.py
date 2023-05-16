@@ -118,6 +118,8 @@ class TileBoard:
                             46, 48, 40, 42, 36, 38, 49, 51, 45, 47, 20, 22, 33, 35, 29, 31, 24, 26, 19, 21, 32, 34,
                             28, 30, 23, 25, 14, 16, 10, 12, 1, 3, 5, 7, 13, 15, 9, 11, 0, 2, 4, 6]
 
+        self.SiPM_empty_channels = [13, 14, 15, 16, 21, 23, 34, 56, 71]
+
         self.Tile_h = np.array([34.28, 34.28, 35.18, 35.18, 37.40, 37.40, 39.07, 39.07])
         self.Tile_a = np.array([33.53, 33.53, 35.03, 35.03, 36.59, 36.59, 37.41, 37.41])
         self.Tile_b = np.array([34.28, 34.28, 35.81, 35.81, 36.80, 36.80, 38.47, 38.47])
@@ -226,10 +228,16 @@ class TileBoard:
         Args:
             ax: The pyplot axis to draw to.
         """
+        i = 0
         for r, h, a, b in zip(self.SiPM_radii, self.Tile_h, self.Tile_a, self.Tile_b):
             x = np.array([-a/2, a/2, b/2, -b/2])
             y = np.array([-h/2, -h/2, h/2, h/2])
             for phi in self.SiPM_angles:
                 x1, y1 = self.coordinates.Rotate(x, y, phi - 90 + self.coordinates.base_rotation)
                 x1, y1 = self.coordinates.Transform(x1, y1, r, phi)
-                ax.add_patch(patches.Polygon(xy=list(zip(x1, y1)), facecolor="c", alpha=0.3, edgecolor="b"))
+                if self.SiPM_channels[i] in self.SiPM_empty_channels:
+                    color = "gray"
+                else:
+                    color = "c"
+                ax.add_patch(patches.Polygon(xy=list(zip(x1, y1)), facecolor=color, alpha=0.3, edgecolor="b"))
+                i += 1
