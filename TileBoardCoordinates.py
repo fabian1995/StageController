@@ -16,8 +16,12 @@ class TileBoardCoordinates:
         x = x - self.base_origin[0]
         y = y - self.base_origin[1]
         r = np.sqrt(x**2 + y**2)
-        phi = np.arctan(y / x) * 180 / np.pi + self.base_rotation
-        if phi >= 90:
+        phi = np.arctan(y / x) * 180 / np.pi - self.base_rotation
+        if phi <= -270:
+            phi = 360 + phi
+        elif phi <= -90:
+            phi = 180 + phi
+        elif phi >= 90:
             phi = -180 + phi
         return r, phi
 
@@ -61,7 +65,7 @@ class TileBoard:
         phi_rest = phi - slice_fraction/2 - (slice_index - 4) * slice_fraction
 
         # Use the symmetry
-        phi_rest = np.abs(phi_rest)
+        phi_rest = -np.abs(phi_rest)
         c1 = TileBoardCoordinates(base_rotation=90)
         x1, y1 = c1.PolarToCartesian(r, phi_rest)
         tile_h1 = self.SiPM_radii - self.Tile_h / 2
@@ -82,7 +86,7 @@ class TileBoard:
         if y1 > k * x1 + d:
             return self.SiPM_channels[h_index * self.SiPM_radii.size + slice_index]
 
-        return "{}, {}".format(x1, y1)
+        return -1
 
 
     def DrawOutline(self, ax, detail=30):
