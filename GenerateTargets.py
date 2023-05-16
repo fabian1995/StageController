@@ -30,8 +30,15 @@ all_radii = np.repeat(radii, 8)
 x_hits, y_hits = coord.PolarToCartesian(all_radii, all_angles)
 x_hits = -x_hits
 
+# New order for channels for the scanner
+base_row = np.arange(0, 8, 1, dtype=int)
+new_index = base_row
+for i in range(1, 8):
+    new_index = np.concatenate([new_index, (np.flip(base_row) if i % 2 == 1 else base_row) + i * 8])
+
 # Write the hit positions to a CSV file
 df = pd.DataFrame(data={"ch": board.SiPM_channels, "x": x_hits, "y": y_hits})
+df = df.loc[new_index]
 df = df[~df["ch"].isin(board.SiPM_empty_channels)]
 df.to_csv("hit_positions.csv")
 
